@@ -1,9 +1,6 @@
 package day04_05;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.util.Objects;
@@ -11,6 +8,7 @@ import java.util.Objects;
 @Getter
 @AllArgsConstructor
 @NonNull
+@ToString
 public class Movie {
 
     @Setter

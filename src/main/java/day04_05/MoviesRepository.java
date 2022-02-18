@@ -36,8 +36,11 @@ public class MoviesRepository {
              PreparedStatement stmt = conn.prepareStatement(sql, RETURN_GENERATED_KEYS)
         ) {
             for (Movie movie : movies) {
-                if (isMovieInDatabase(movie) == 0) {
+                Optional<Movie> found = findMovie(movie);
+                if (found.isEmpty()) {
                     saveMovie(movie, stmt);
+                } else {
+                    movie.setId(found.get().getId());
                 }
             }
         } catch (SQLException e) {
@@ -53,10 +56,8 @@ public class MoviesRepository {
     }
 
     public List<Movie> findAllMovies() {
-        try (Connection conn = dataSource.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("select * from movies")
-        ) {
+        try {
+            ResultSet rs = select("SELECT * FROM movies");
             List<Movie> result = new ArrayList<>();
             while (rs.next()) {
                 result.add(getMovieFromResultSet(rs));
@@ -68,14 +69,41 @@ public class MoviesRepository {
     }
 
     public Optional<Movie> findMovieById(long id) {
-        try (Connection conn = dataSource.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("select * from movies where id =" + id)
-        ) {
+        String sql = "SELECT * FROM movies WHERE id = " + id;
+        return getMovie(sql);
+    }
+
+    public Optional<Movie> findMovieByTitleAndReleaseDate(String title, LocalDate releaseDate) {
+        return findMovie(new Movie(title, releaseDate));
+    }
+
+    public Optional<Movie> findMovie(Movie movie) {
+        String sql = """
+                SELECT *
+                FROM movies
+                WHERE title LIKE '1'  AND  release_date LIKE '2'"""
+                .replace("1", movie.getTitle())
+                .replace("2", Date.valueOf(movie.getReleaseDate()).toString());
+        log.debug(sql);
+        return getMovie(sql);
+    }
+
+    private Optional<Movie> getMovie(String sql) {
+        try {
+            ResultSet rs = select(sql);
             if (!rs.next()) return Optional.empty();
             return Optional.of(getMovieFromResultSet(rs));
         } catch (SQLException e) {
             throw new IllegalStateException("cant select", e);
+        }
+    }
+
+    private ResultSet select(String sql) throws SQLException {
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)
+        ) {
+            return rs;
         }
     }
 
@@ -95,32 +123,4 @@ public class MoviesRepository {
         }
     }
 
-    public int isMovieInDatabase(Movie movie) {
-        String sql = """
-                SELECT *
-                FROM movies
-                WHERE title = ?  AND  release_date = ?""";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)
-        ) {
-            stmt.setString(1, movie.getTitle());
-            stmt.setDate(2, Date.valueOf(movie.getReleaseDate()));
-            return isMovieResult(movie,stmt);
-
-        } catch (SQLException e) {
-            throw new IllegalStateException("cant select", e);
-        }
-    }
-
-    private int isMovieResult(Movie movie, PreparedStatement stmt) throws SQLException {
-        stmt.execute();
-        try (ResultSet rs = stmt.getResultSet()) {
-            if (rs != null && rs.last()) {
-                log.warn("movie already in database");
-                movie.setId(rs.getLong("id"));
-                return rs.getRow();
-            }
-            return 0;
-        }
-    }
 }

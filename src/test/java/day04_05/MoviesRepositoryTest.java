@@ -35,15 +35,23 @@ class MoviesRepositoryTest {
 
         repository = new MoviesRepository(dataSource);
 
-        repository.saveMovies(titanic,games);
+        repository.saveMovies(titanic, games);
 
     }
 
     @Test
-    void isMovieInDatabase() {
+    void findMovie() {
 
-        repository.saveMovie(titanic);
-        assertEquals(1, repository.isMovieInDatabase(titanic));
+        assertTrue(repository.findMovie(titanic).isPresent());
+        assertTrue(repository.findMovie(games).isPresent());
+
+    }
+
+    @Test
+    void findMovieByTitleAndReleaseDate() {
+
+        assertTrue(repository.findMovieByTitleAndReleaseDate(titanic.getTitle(), titanic.getReleaseDate()).isPresent());
+        assertTrue(repository.findMovieByTitleAndReleaseDate(games.getTitle(), games.getReleaseDate()).isPresent());
 
     }
 
@@ -56,6 +64,8 @@ class MoviesRepositoryTest {
 
         assertFalse(actual.isEmpty());
         assertEquals(titanic.getTitle(), actual.get().getTitle());
+
+        assertTrue(repository.findMovieById(0).isEmpty());
     }
 
     @Test

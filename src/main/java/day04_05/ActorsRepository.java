@@ -13,6 +13,7 @@ import static java.sql.Statement.RETURN_GENERATED_KEYS;
 @Log4j2
 public class ActorsRepository {
 
+    private static final String CAN_NOT_SELECT = "can not select";
     DataSource dataSource;
 
     public ActorsRepository(DataSource dataSource) {
@@ -85,7 +86,6 @@ public class ActorsRepository {
              ResultSet rs = stmt.executeQuery(sql)
         ) {
             if (rs != null && rs.last()) {
-                log.warn("actor already in database");
                 actor.setId(rs.getLong("id"));
                 return rs.getRow();
             }
@@ -115,7 +115,7 @@ public class ActorsRepository {
             }
             return actors;
         } catch (SQLException e) {
-            throw new IllegalStateException("can select", e);
+            throw new IllegalStateException(CAN_NOT_SELECT, e);
         }
     }
 
@@ -143,7 +143,7 @@ public class ActorsRepository {
             stmt.setString(1, prefix + '%');
             return executeQueryAndGetActorsName(stmt);
         } catch (SQLException e) {
-            throw new IllegalStateException("can select", e);
+            throw new IllegalStateException(CAN_NOT_SELECT, e);
         }
     }
 
